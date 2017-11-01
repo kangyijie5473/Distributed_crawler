@@ -1,0 +1,64 @@
+标题:  spark学习：1.textFile函数
+
+发布时间:  2017-09-05 20:14
+
+类别:  原创
+
+标签:  spark
+
+阅读人数:  28
+
+正文: 
+
+使用前先修改打印等级，不然结果不好看，输出一堆INFO信息 
+修改path /conf/log4j.properties配置文件 
+
+
+
+log4j.rootCategory=WARN, console   //改为WARN等级
+
+1.使用 pyspark
+
+本地读取两种方式：
+
+
+
+ dd = sc.textFile("file:///workdir/bak_conf/hive/hive-site.xml") 
+ dd = sc.textFile("/workdir/bak_conf/hive/hive-site.xml")
+
+均出现错误
+
+
+
+17/09/05 16:03:31 WARN TaskSetManager: Lost task 0.0 in stage 1.0 (TID 5, 192.168.120.141, executor 1): java.io.FileNotFoundException: File file:/workdir/bak_conf/hive/hive-site.xml does not exist
+    at org.apache.hadoop.fs.RawLocalFileSystem.deprecatedGetFileStatus(RawLocalFileSystem.java:611)
+    at org.apache.hadoop.fs.RawLocalFileSystem.getFileLinkStatusInternal(RawLocalFileSystem.java:824)
+    at org.apache.hadoop.fs.RawLocalFileSystem.getFileStatus(RawLocalFileSystem.java:601)
+    at org.apache.hadoop.fs.FilterFileSystem.getFileStatus(FilterFileSystem.java:421)
+    at org.apache.hadoop.fs.ChecksumFileSystem$ChecksumFSInputChecker.<init>(ChecksumFileSystem.java:142)
+    at org.apache.hadoop.fs.ChecksumFileSystem.open(ChecksumFileSystem.java:346)
+    at org.apache.hadoop.fs.FileSystem.open(FileSystem.java:769)
+.......(略)
+
+结论： 
+pyspark下默认为集群模式(spark-shell等均相同)， 
+如果你是在集群的环境下运行，必须确保所有的节点上的同个文件夹都有该文件，即你这台物理即上和其他集群物理机上在相同的路径下有相同的文件(试过路径加file://和不加都一样),或者你可以使用HDFS 
+(例sc.textFile(“hdfs://master:9000/workdir/testfile”))就不会出现此问题
+
+
+
+2.使用spark-submit 
+local模式：
+
+conf = SparkConf().setMaster("local").setAppName("My test")
+
+使用hdfs 和 本地都可以
+
+集群模式：
+
+
+
+conf=SparkConf().setMaster("spark://master:7077").setAppName("My test")
+
+结果与使用pyspark相同
+
