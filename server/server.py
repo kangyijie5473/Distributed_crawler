@@ -16,15 +16,19 @@ from pymongo import MongoClient
 from time import sleep
 from kazoo.client import KazooClient
 import os
+
+# reload sys in order to deal with char set
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-#os.system("./clear.sh")
-
+# start ZooKeeper Cluster
 hosts_list =  ['123.206.89.123:2181', '123.207.157.135:2181', '118.89.234.46:2181']
 zk = KazooClient(hosts = hosts_list)
 zk.start()
+
+# try to use many kinds of MySQL Client to kill the fu*king BUG
+
 #db2 = pymysql.connect(host="localhost",user="root",passwd="765885195",db="HP",charset="utf8")
 #db2 = mysql.connector.connect(user="root", passwd="765885195", database="HP", use_unicode=True)
 #db2 = MySQLdb.connect("localhost", "root", "765885195", "HP")
@@ -65,7 +69,7 @@ info_zk = {'0':['taobao','1'],     #
 state_map = {"5":"continue", "8":"pause", "13":"stop"}
 node_map = {}
 
-# Mongodb连接句柄
+# MongoDB handle (Mongodb连接句柄)
 mdb = []
 # 展示数据
 show_data = []
@@ -239,7 +243,7 @@ class ThreadedTCPRequestHandler(SocketServer.BaseRequestHandler):
                 print "正在等待主控发来指令...."
                 break
             
-
+            # request to show working job
             # 请求正在运行任务
             #url+ '' ['1']
             if jdata[0]['Agreement'] == '1':
@@ -272,8 +276,8 @@ class ThreadedTCPRequestHandler(SocketServer.BaseRequestHandler):
                 except Exception, e:
                     print "get working task Send error: %s" % e
 
-            # 获取所有任务(li shi ren wu)
-            # server 
+            # request tp show all job(include history job)
+            # 获取所有任务
             elif jdata[0]['Agreement'] == '2':
                 print 'mt请求所有任务....'
                 task = ['2']
@@ -301,8 +305,8 @@ class ThreadedTCPRequestHandler(SocketServer.BaseRequestHandler):
                 except Exception, e:
                     print "get all task Send error: %s" % e
 
+            # request to show end job
             # 获取终止任务 
-            # server
             elif jdata[0]['Agreement'] == '3':
                 print 'mt请求所有任务....'
                 task = ['3']
@@ -330,8 +334,8 @@ class ThreadedTCPRequestHandler(SocketServer.BaseRequestHandler):
                 except Exception, e:
                     print "get end task Send Error: %s" % e
 
+            # request to start a job (multi URL)
             # 混合url任务请求
-            # zk 
             elif jdata[0]['Agreement'] == '4':
                 urls = jdata[0]['Content'].split(', ')
                 print 'urls', urls
@@ -396,8 +400,8 @@ class ThreadedTCPRequestHandler(SocketServer.BaseRequestHandler):
                     self.request.sendall(json.dumps(["4","-1"]))
                     print "start task(multi) Send error: %s" % e
             
+            # request to start a single URL job
             # 发布精确任务
-            # zk
             elif jdata[0]['Agreement'] == '5':
                 urls = jdata[0]['Content'].split(', ')
                 print 'urls', urls
@@ -470,8 +474,8 @@ class ThreadedTCPRequestHandler(SocketServer.BaseRequestHandler):
                     self.request.sendall(json.dumps(["5","-1"]))
                     print "start task(acc) Send error: %s" % e
 
+            # request to start a job instantly
             # 发布即时任务
-            # no
             elif jdata[0]['Agreement'] == '8':
                 del instant_data[:]
                 instant_data.append('35')
@@ -532,9 +536,8 @@ class ThreadedTCPRequestHandler(SocketServer.BaseRequestHandler):
                 except Exception, e:
                     print "start im task Error: %s" % e
 
+            # change job state(pause, continue,)
             # 修改任务状态
-            # pause continue stop
-            # to do  : continue time 
             elif jdata[0]['Agreement'] == '9':
                 obj_list = []
                 data = jdata[0]['Content'].split(',')
@@ -612,8 +615,8 @@ class ThreadedTCPRequestHandler(SocketServer.BaseRequestHandler):
                     self.request.sendall(json.dumps(["9","-1"]))
                     print "change task state Send error: %s" % e
             
+            # request to show jobs and down nums
             # 获取任务及下载总数
-            # no
             elif jdata[0]['Agreement'] == '13':
                 print 'mt请求任务及下载总数....'
                 task = ['13']
@@ -641,8 +644,8 @@ class ThreadedTCPRequestHandler(SocketServer.BaseRequestHandler):
                 except Exception, e:
                     print "get task amount Send error: %s" % e
             
+            # request to show data log 
             # 查看数据日志
-            # no
             elif jdata[0]['Agreement'] == '21':
                 print '正在查看数据日志'
                 log = ['21']
@@ -678,8 +681,8 @@ class ThreadedTCPRequestHandler(SocketServer.BaseRequestHandler):
                 except Exception, e:
                     print "get log Send error: %s" % e
     
+            # request to show history job down nums
             # 获取任务下载总数
-            # no
             elif jdata[0]['Agreement'] == '34':
                 print 'mt请求历史任务下载总数....'
                 task = ['34']
@@ -903,8 +906,8 @@ class ThreadedTCPRequestHandler(SocketServer.BaseRequestHandler):
                     self.request.sendall(json.dumps(["57","-1"]))
                     print "add / delete Send error: %s" % e
 
+            # delete data 
             # 删除数据
-            # no
             elif jdata[0]['Agreement'] == '89':
                 data = jdata[0]["Content"].split(',')
                 sql = "delete from amount where url='"+data[0]+"' and keywords='"+data[1]+"'"
@@ -932,6 +935,7 @@ class ThreadedTCPRequestHandler(SocketServer.BaseRequestHandler):
 def sigint_handler(signum, frame):
     print 'catched interrupt signal!'
 
+# get data in DB to memory 
 def mysql_to_memory():
     sql = "select * from info"
     try:
@@ -953,7 +957,7 @@ if __name__ == "__main__":
 
     mysql_to_memory()
     
-    HOST, PORT = "172.18.214.188", 8888
+    HOST, PORT = "172.18.214.188", 8888 # Server IP address and port
     
     SocketServer.TCPServer.allow_reuse_address = True
     server = SocketServer.ThreadingTCPServer((HOST, PORT), ThreadedTCPRequestHandler)

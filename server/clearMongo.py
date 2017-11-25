@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # coding=utf-8
 
+
+# This is a clear-all-MongoDB script 
+
 from pymongo import MongoClient
 
 client1 = MongoClient('47.93.198.31', 27017)
